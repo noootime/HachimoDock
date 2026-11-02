@@ -6,6 +6,7 @@
  */
 
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -64,7 +65,63 @@ fn emit_build_identity() {
 fn main() {
     prepare_reference_image_bridge();
     emit_build_identity();
-    tauri_build::build()
+    if windows_msvc_target() {
+        // Tauri embeds its manifest only into bin targets. `cargo test --lib`
+        // links a separate executable, and `cargo:rustc-link-arg-tests` does not
+        // reach that executable. Drop Tauri's bin-only copy and pass one manifest
+        // with an unscoped linker argument so the app exe and the lib test exe
+        // both embed it.
+        let attributes = tauri_build::Attributes::new().windows_attributes(
+            tauri_build::WindowsAttributes::new_without_app_manifest(),
+        );
+        if let Err(error) = tauri_build::try_build(attributes) {
+            println!("{error:#}");
+            std::process::exit(1);
+        }
+        embed_windows_comctl32_v6_manifest();
+    } else {
+        tauri_build::build();
+    }
+}
+
+fn windows_msvc_target() -> bool {
+    env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
+        && env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc")
+}
+
+fn embed_windows_comctl32_v6_manifest() {
+    let architecture = match env::var("CARGO_CFG_TARGET_ARCH").as_deref() {
+        Ok("x86_64") => "amd64",
+        Ok("aarch64") => "arm64",
+        Ok("x86") => "x86",
+        other => panic!("unsupported Windows architecture for the comctl32 6.0 manifest: {other:?}"),
+    };
+    let manifest = format!(
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity
+        type="win32"
+        name="Microsoft.Windows.Common-Controls"
+        version="6.0.0.0"
+        processorArchitecture="{architecture}"
+        publicKeyToken="6595b64144ccf1df"
+        language="*"
+      />
+    </dependentAssembly>
+  </dependency>
+</assembly>
+"#
+    );
+    let manifest_path = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR is set for build scripts"))
+        .join("comctl32-v6.xml");
+    fs::write(&manifest_path, manifest).expect("failed to write the comctl32 6.0 manifest");
+    let manifest_path = manifest_path
+        .to_str()
+        .expect("comctl32 manifest path is valid Unicode");
+    println!("cargo:rustc-link-arg=/MANIFEST:EMBED");
+    println!("cargo:rustc-link-arg=/MANIFESTINPUT:{manifest_path}");
 }
 
 fn prepare_reference_image_bridge() {

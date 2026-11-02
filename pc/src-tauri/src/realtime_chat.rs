@@ -2381,6 +2381,7 @@ mod tests {
         let dir = std::path::PathBuf::from(std::env::var("PET_REALTIME_SETTINGS_DIR").unwrap());
         voice_chat_settings::configure_storage_dir(dir.clone()).unwrap();
         crate::llm_network::configure_storage_dir(dir.clone()).unwrap();
+        #[cfg(target_os = "macos")]
         crate::volcengine_asr::configure_storage_dir(dir).unwrap();
         tauri::async_runtime::block_on(async {
             let cfg = voice_chat_settings::tts_config("zh_female_vv_uranus_bigtts", "", 1.0).unwrap();
@@ -2445,6 +2446,7 @@ mod tests {
         let dir = std::path::PathBuf::from(std::env::var("PET_REALTIME_SETTINGS_DIR").unwrap());
         voice_chat_settings::configure_storage_dir(dir.clone()).unwrap();
         crate::llm_network::configure_storage_dir(dir.clone()).unwrap();
+        #[cfg(target_os = "macos")]
         crate::volcengine_asr::configure_storage_dir(dir).unwrap();
         // Generated stimulus only. Microphone PCM is never written to disk.
         let pcm = tauri::async_runtime::block_on(async {
@@ -2571,6 +2573,7 @@ mod tests {
         let dir = std::path::PathBuf::from(std::env::var("PET_REALTIME_SETTINGS_DIR").unwrap());
         voice_chat_settings::configure_storage_dir(dir.clone()).unwrap();
         crate::llm_network::configure_storage_dir(dir.clone()).unwrap();
+        #[cfg(target_os = "macos")]
         crate::volcengine_asr::configure_storage_dir(dir.clone()).unwrap();
         diagnostics::configure(&dir).unwrap();
         let port = std::env::var("P4_SERIAL_PORT").unwrap();
@@ -2749,6 +2752,7 @@ mod tests {
         let dir=std::path::PathBuf::from(std::env::var("PET_REALTIME_SETTINGS_DIR").unwrap());
         voice_chat_settings::configure_storage_dir(dir.clone()).unwrap();
         crate::llm_network::configure_storage_dir(dir.clone()).unwrap();
+        #[cfg(target_os = "macos")]
         crate::volcengine_asr::configure_storage_dir(dir.clone()).unwrap();
         diagnostics::configure(&dir).unwrap();
         let board=std::env::var("P4_EXPECTED_BOARD_ID").unwrap();

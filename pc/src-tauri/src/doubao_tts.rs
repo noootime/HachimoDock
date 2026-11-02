@@ -520,6 +520,7 @@ mod tests {
     fn live_seed_tts_2_catalog() {
         let dir = std::path::PathBuf::from(std::env::var("PET_REALTIME_SETTINGS_DIR").expect("settings directory"));
         crate::voice_chat_settings::configure_storage_dir(dir.clone()).unwrap();
+        #[cfg(target_os = "macos")]
         crate::volcengine_asr::configure_storage_dir(dir).unwrap();
         tauri::async_runtime::block_on(async {
             for speaker in ["zh_female_vv_uranus_bigtts", "zh_male_shaonianzixin_uranus_bigtts", "zh_male_ruyayichen_uranus_bigtts", "ICL_uranus_en_female_charlie_tob", "en_male_bill_jones_corey_uranus_bigtts"] {
